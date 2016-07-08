@@ -1,4 +1,5 @@
 
+use Test::More tests => 1;
 use LaTeX::Recode;
 use utf8;
 
