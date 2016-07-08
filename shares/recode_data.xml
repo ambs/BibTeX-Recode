@@ -249,7 +249,7 @@
     <map><from>textsuperimposetilde</from>       <to hex="334">̴</to></map>
     <map><from>textlstrokethru</from>            <to hex="336">̶</to></map>
     <map><from>textsstrikethru</from>            <to hex="337">̷</to></map>
-    <map><from>textlstrikethru</from>            <to hex="338"≯</to></map>
+    <map><from>textlstrikethru</from>            <to hex="338"≯</to></map>
     <map><from>textsubrhalfring</from>           <to hex="339">̹</to></map>
     <map><from>textinvsubbridge</from>           <to hex="33A">̺</to></map>
     <map><from>textsubsquare</from>              <to hex="33B">̻</to></map>
@@ -324,7 +324,7 @@
     <map><from>textbar</from>                          <to hex="7C">|</to></map>
     <map><from>textbraceright</from>                   <to hex="7D">}</to></map>
     <map><from>textasciitilde</from>                   <to hex="7E">~</to></map>
-    <map><from>nobreakspace</from>                     <to hex="A0"> </to></map>
+    <map><from>nobreakspace</from>                     <to hex="A0"> </to></map>
     <map><from>textexclamdown</from>                   <to hex="A1">¡</to></map>
     <map><from>textcent</from>                         <to hex="A2">¢</to></map>
     <map><from>textsterling</from>                     <to hex="A3">£</to></map>
@@ -884,7 +884,7 @@
     <char>|</char>
     <char>}</char>
     <char>~</char>
-    <char> </char>
+    <char> </char>
     <char>£</char>
     <char>±</char>
     <char>¶</char>
