@@ -14,6 +14,8 @@ use XML::LibXML::Simple;
 use Carp;
 use utf8;
 
+use File::ShareDir 'module_file';
+
 our @EXPORT  = qw(latex_encode latex_decode);
 
 =encoding utf-8
@@ -73,18 +75,8 @@ sub init_sets {
   $remap_e = {};
   $remap_e_raw = {};
 
-  my $mapdata;
-  # we assume that the data file is in the same dir as the module
-  (my $vol, my $data_path, undef) = File::Spec->splitpath( $INC{'LaTeX/Recode.pm'} );
-  
-  # Deal with the strange world of Par::Packer paths, see similar code in Biber.pm
-  
-  if ($data_path =~ m|/par\-| and $data_path !~ m|/inc|) { # a mangled PAR @INC path
-    $mapdata = File::Spec->catpath($vol, "$data_path/inc/lib/Biber/LaTeX/recode_data.xml");
-  }
-  else {
-    $mapdata = File::Spec->catpath($vol, $data_path, 'recode_data.xml');
-  }
+  my $mapdata = module_file("recode_data.xml");
+
 
   # Read driver config file
   my $xml = File::Slurp::read_file($mapdata) or biber_error("Can't read file $mapdata");
@@ -182,10 +174,7 @@ sub latex_decode {
     # Optimisation - if virtual null set was specified, do nothing
     return $text if $set_d eq 'null';
 
-    if ($logger->is_trace()) {# performance tune
-      $logger->trace("String before latex_decode() -> '$text'");
-    }
-
+    
     my %opts      = @_;
     my $norm      = exists $opts{normalize} ? $opts{normalize} : 1;
     my $norm_form = exists $opts{normalization} ? $opts{normalization} : 'NFD';
@@ -272,10 +261,7 @@ sub latex_decode {
     $text = reverse $text;
     $text =~ s/}(\pM+\pL){(?!\pL+\\)/$1/g;
     $text = reverse $text;
-    if ($logger->is_debug()) {# performance tune
-      $logger->trace("String in latex_decode() now -> '$text'");
-    }
-
+    
     if ($norm) {
       return Unicode::Normalize::normalize( $norm_form, $text );
     }
