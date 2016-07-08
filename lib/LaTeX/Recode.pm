@@ -22,11 +22,11 @@ our @EXPORT  = qw(latex_encode latex_decode);
 
 =head1 NAME
 
-Biber::LaTeX::Recode - Encode/Decode chars to/from UTF-8/lacros in LaTeX
+LaTeX::Recode - Encode/Decode chars to/from UTF-8/macros in LaTeX
 
 =head1 SYNOPSIS
 
-    use Biber::LaTeX:Recode
+    use LaTeX:Recode
 
     my $string       = 'Muḥammad ibn Mūsā al-Khwārizmī';
     my $latex_string = latex_encode($string);
@@ -65,7 +65,7 @@ use vars qw( $remap_d $remap_e $remap_e_raw $set_d $set_e );
 
 =cut
 
-sub init_sets {
+sub init_sets { ### FIXME: get rid of this.
   shift; # class method
   ($set_d, $set_e) = @_;
   no autovivification;
@@ -75,7 +75,7 @@ sub init_sets {
   $remap_e = {};
   $remap_e_raw = {};
 
-  my $mapdata = module_file("recode_data.xml");
+  my $mapdata = module_file('LaTeX::Recode' => "recode_data.xml");
 
 
   # Read driver config file
