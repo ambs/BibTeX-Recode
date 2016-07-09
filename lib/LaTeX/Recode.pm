@@ -16,6 +16,14 @@ use File::ShareDir 'module_file';
 
 our @EXPORT = qw(latex_encode latex_decode);
 
+# sub import {
+#     my $self = shift;
+#     my $lang = shift;
+#     $selected_language = $lang if $lang;
+
+#     $self->export_to_level(1, undef, @EXPORT);
+# }
+
 =encoding utf-8
 
 =head1 NAME
@@ -285,6 +293,7 @@ sub latex_decode {
     $text = reverse $text;
 
     if ($norm) {
+      print STDERR "\n HERE \n";
         return Unicode::Normalize::normalize( $norm_form, $text );
     }
     else {
