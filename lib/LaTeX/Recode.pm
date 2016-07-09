@@ -10,7 +10,6 @@ use File::Spec;
 use Unicode::Normalize;
 use List::AllUtils qw (first);
 use XML::LibXML::Simple;
-use Carp;
 use utf8;
 
 use File::ShareDir 'module_file';
@@ -41,8 +40,8 @@ Allows conversion between Unicode chars and LaTeX macros.
 
 =head1 GLOBAL OPTIONS
 
-Possible values for the encoding/decoding set to use are 'null', 'base' and 'full'; default
-value is 'base'.
+Possible values for the encoding/decoding set to use are 'null', 'base' and 'full';
+default value is 'base'.
 
 null  => No conversion
 
@@ -78,7 +77,7 @@ sub init_sets {    ### FIXME: get rid of this.
 
     # Read driver config file
     my $xml = File::Slurp::read_file($mapdata)
-        or biber_error("Can't read file $mapdata");
+        or die("Can't read file $mapdata");
     my $doc = XML::LibXML->load_xml( string => decode( 'UTF-8', $xml ) );
     my $xpc = XML::LibXML::XPathContext->new($doc);
 
@@ -304,6 +303,8 @@ sub latex_encode {
 
     # Optimisation - if virtual null set was specified, do nothing
     return $text if $set_e eq 'null';
+
+    $text = NFD($text); 
 
     foreach my $type (
         qw'greek dings negatedsymbols superscripts cmdsuperscripts
