@@ -36,7 +36,7 @@ LaTeX::Recode - Encode/Decode chars to/from UTF-8/macros in LaTeX
 
 =head1 SYNOPSIS
 
-    use LaTeX:Recode
+    use LaTeX::Recode;
 
     my $string       = 'Muḥammad ibn Mūsā al-Khwārizmī';
     my $latex_string = latex_encode($string);
@@ -45,6 +45,12 @@ LaTeX::Recode - Encode/Decode chars to/from UTF-8/macros in LaTeX
     my $string = 'Mu\d{h}ammad ibn M\=us\=a al-Khw\=arizm\={\i}';
     my $utf8_string   = latex_decode($string);
         # => 'Muḥammad ibn Mūsā al-Khwārizmī'
+
+
+    # if you want to define a different conversion set (either
+    # for encoding or decoding):
+    use LaTeX::Recode encode_set => 'full', decode_set => 'base';
+
 
 =head1 DESCRIPTION
 
@@ -68,113 +74,8 @@ full  => Also converts punctuation, larger range of diacritics and macros
 
 our ($remap_d, $remap_e, $remap_e_raw, $set_d, $set_e);
 
-=head2 _init_sets(<decode set>, <encode_set>)
 
-Initialise recoding sets. 
-This is a private method, and its direct usage should not be needed 
-in normal circunstances.
 
-=cut
-
-sub _init_sets { 
-    ( $set_d, $set_e ) = @_;
-    no autovivification;
-
-    # Reset these, mostly for tests which call init_sets more than once
-    $remap_d     = {};
-    $remap_e     = {};
-    $remap_e_raw = {};
-
-    my $mapdata = module_file( 'LaTeX::Recode' => "recode_data.xml" );
-
-    # Read driver config file
-    my $xml = File::Slurp::read_file($mapdata)
-        or die("Can't read file $mapdata");
-    my $doc = XML::LibXML->load_xml( string => decode( 'UTF-8', $xml ) );
-    my $xpc = XML::LibXML::XPathContext->new($doc);
-
-    my @types = qw(letters diacritics punctuation symbols negatedsymbols 
-                   superscripts cmdsuperscripts dings greek);
-
-    # Have to have separate loops for decode/recode or you can't have independent
-    # decode/recode sets
-
-    # Construct decode set
-    foreach my $type (@types) {
-        foreach my $maps ( $xpc->findnodes("/texmap/maps[\@type='$type']") ) {
-            my @set = split( /\s*,\s*/, $maps->getAttribute('set') );
-            next unless first { $set_d eq $_ } @set;
-            foreach my $map ( $maps->findnodes('map') ) {
-                my $from = $map->findnodes('from')->shift();
-                my $to   = $map->findnodes('to')->shift();
-                $remap_d->{$type}{map}{ NFD( $from->textContent() ) }
-                    = NFD( $to->textContent() );
-            }
-        }
-
-        # Things we don't want to change when decoding as this breaks some things
-        foreach my $d ( $xpc->findnodes('/texmap/decode_exclude/char') ) {
-            delete( $remap_d->{$type}{map}{ NFD( $d->textContent() ) } );
-        }
-    }
-
-    # Construct encode set
-    foreach my $type (@types) {
-        foreach my $maps ( $xpc->findnodes("/texmap/maps[\@type='$type']") ) {
-            my @set = split( /\s*,\s*/, $maps->getAttribute('set') );
-            next unless first { $set_e eq $_ } @set;
-            foreach my $map ( $maps->findnodes('map') ) {
-                my $from = $map->findnodes('from')->shift();
-                my $to   = $map->findnodes('to')->shift();
-                $remap_e->{$type}{map}{ NFD( $to->textContent() ) }
-                    = NFD( $from->textContent() );
-            }
-
-            # There are some duplicates in the data to handle preferred encodings.
-            foreach my $map ( $maps->findnodes('map[from[@preferred]]') ) {
-                my $from = $map->findnodes('from')->shift();
-                my $to   = $map->findnodes('to')->shift();
-                $remap_e->{$type}{map}{ NFD( $to->textContent() ) }
-                    = NFD( $from->textContent() );
-            }
-
-            # Some things might need to be inserted as is rather than wrapped
-            # in some macro/braces
-            foreach my $map ( $maps->findnodes('map[from[@raw]]') ) {
-                my $from = $map->findnodes('from')->shift();
-                my $to   = $map->findnodes('to')->shift();
-                $remap_e_raw->{ NFD( $to->textContent() ) } = 1;
-            }
-
-        }
-
-        # Things we don't want to change when encoding as this would break LaTeX
-        foreach my $e ( $xpc->findnodes('/texmap/encode_exclude/char') ) {
-            delete( $remap_e->{$type}{map}{ NFD( $e->textContent() ) } );
-        }
-    }
-
-    # Populate the decode regexps
-    # sort by descending length of macro name to avoid shorter macros which 
-    # are substrings of longer ones damaging the longer ones
-    foreach my $type (@types) {
-        next unless exists $remap_d->{$type};
-        $remap_d->{$type}{re} = join( '|',
-            map { /[\.\^\|\+\-\)\(]/ ? '\\' . $_ : $_ }
-                sort { length($b) <=> length($a) }
-                keys $remap_d->{$type}{map}->%* );
-        $remap_d->{$type}{re} = qr|$remap_d->{$type}{re}|;
-    }
-
-    # Populate the encode regexps
-    foreach my $type (@types) {
-        next unless exists $remap_e->{$type};
-        $remap_e->{$type}{re} = join( '|',
-            map { /[\.\^\|\+\-\)\(]/ ? '\\' . $_ : $_ }
-            sort keys %{ $remap_e->{$type}{map} } );
-        $remap_e->{$type}{re} = qr|$remap_e->{$type}{re}|;
-    }
-}
 
 =head2 latex_decode($text, @options)
 
@@ -379,6 +280,116 @@ sub latex_encode {
     }
 
     return $text;
+}
+
+
+=head2 _init_sets(<decode set>, <encode_set>)
+
+Initialise recoding sets. 
+This is a private method, and its direct usage should not be needed 
+in normal circunstances.
+
+=cut
+
+
+sub _init_sets { 
+    ( $set_d, $set_e ) = @_;
+    no autovivification;
+
+    # Reset these, mostly for tests which call init_sets more than once
+    $remap_d     = {};
+    $remap_e     = {};
+    $remap_e_raw = {};
+
+    my $mapdata = module_file( 'LaTeX::Recode' => "recode_data.xml" );
+
+    # Read driver config file
+    my $xml = File::Slurp::read_file($mapdata)
+        or die("Can't read file $mapdata");
+    my $doc = XML::LibXML->load_xml( string => decode( 'UTF-8', $xml ) );
+    my $xpc = XML::LibXML::XPathContext->new($doc);
+
+    my @types = qw(letters diacritics punctuation symbols negatedsymbols 
+                   superscripts cmdsuperscripts dings greek);
+
+    # Have to have separate loops for decode/recode or you can't have independent
+    # decode/recode sets
+
+    # Construct decode set
+    foreach my $type (@types) {
+        foreach my $maps ( $xpc->findnodes("/texmap/maps[\@type='$type']") ) {
+            my @set = split( /\s*,\s*/, $maps->getAttribute('set') );
+            next unless first { $set_d eq $_ } @set;
+            foreach my $map ( $maps->findnodes('map') ) {
+                my $from = $map->findnodes('from')->shift();
+                my $to   = $map->findnodes('to')->shift();
+                $remap_d->{$type}{map}{ NFD( $from->textContent() ) }
+                    = NFD( $to->textContent() );
+            }
+        }
+
+        # Things we don't want to change when decoding as this breaks some things
+        foreach my $d ( $xpc->findnodes('/texmap/decode_exclude/char') ) {
+            delete( $remap_d->{$type}{map}{ NFD( $d->textContent() ) } );
+        }
+    }
+
+    # Construct encode set
+    foreach my $type (@types) {
+        foreach my $maps ( $xpc->findnodes("/texmap/maps[\@type='$type']") ) {
+            my @set = split( /\s*,\s*/, $maps->getAttribute('set') );
+            next unless first { $set_e eq $_ } @set;
+            foreach my $map ( $maps->findnodes('map') ) {
+                my $from = $map->findnodes('from')->shift();
+                my $to   = $map->findnodes('to')->shift();
+                $remap_e->{$type}{map}{ NFD( $to->textContent() ) }
+                    = NFD( $from->textContent() );
+            }
+
+            # There are some duplicates in the data to handle preferred encodings.
+            foreach my $map ( $maps->findnodes('map[from[@preferred]]') ) {
+                my $from = $map->findnodes('from')->shift();
+                my $to   = $map->findnodes('to')->shift();
+                $remap_e->{$type}{map}{ NFD( $to->textContent() ) }
+                    = NFD( $from->textContent() );
+            }
+
+            # Some things might need to be inserted as is rather than wrapped
+            # in some macro/braces
+            foreach my $map ( $maps->findnodes('map[from[@raw]]') ) {
+                my $from = $map->findnodes('from')->shift();
+                my $to   = $map->findnodes('to')->shift();
+                $remap_e_raw->{ NFD( $to->textContent() ) } = 1;
+            }
+
+        }
+
+        # Things we don't want to change when encoding as this would break LaTeX
+        foreach my $e ( $xpc->findnodes('/texmap/encode_exclude/char') ) {
+            delete( $remap_e->{$type}{map}{ NFD( $e->textContent() ) } );
+        }
+    }
+
+    # Populate the decode regexps
+    # sort by descending length of macro name to avoid shorter macros which 
+    # are substrings of longer ones damaging the longer ones
+    foreach my $type (@types) {
+        next unless exists $remap_d->{$type};
+        $remap_d->{$type}{re} = join( '|',
+            map { /[\.\^\|\+\-\)\(]/ ? '\\' . $_ : $_ }
+                sort { length($b) <=> length($a) }
+                keys $remap_d->{$type}{map}->%* );
+        $remap_d->{$type}{re} = qr|$remap_d->{$type}{re}|;
+    }
+
+    # Populate the encode regexps
+    foreach my $type (@types) {
+        next unless exists $remap_e->{$type};
+        $remap_e->{$type}{re} = join( '|',
+            map { /[\.\^\|\+\-\)\(]/ ? '\\' . $_ : $_ }
+            sort keys %{ $remap_e->{$type}{map} } );
+        $remap_e->{$type}{re} = qr|$remap_e->{$type}{re}|;
+    }
 }
 
 1;
