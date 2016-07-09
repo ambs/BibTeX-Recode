@@ -16,13 +16,17 @@ use File::ShareDir 'module_file';
 
 our @EXPORT = qw(latex_encode latex_decode);
 
-# sub import {
-#     my $self = shift;
-#     my $lang = shift;
-#     $selected_language = $lang if $lang;
+sub import {
+     my ($self, %opts) = @_;
+     
+     my $sets = qr/^(?:null|base|full)$/i;
+     my $encode_set = $opts{encode_set} =~ m!$sets! ? lc $opts{encode_set} : "base";
+     my $decode_set = $opts{decode_set} =~ m!$sets! ? lc $opts{decode_set} : "base";
+     
+     _init_sets($decode_set, $encode_set);
 
-#     $self->export_to_level(1, undef, @EXPORT);
-# }
+     $self->export_to_level(1, undef, @EXPORT);
+}
 
 =encoding utf-8
 
@@ -62,17 +66,17 @@ full  => Also converts punctuation, larger range of diacritics and macros
 
 =cut
 
-use vars qw( $remap_d $remap_e $remap_e_raw $set_d $set_e );
+our ($remap_d, $remap_e, $remap_e_raw, $set_d, $set_e);
 
-=head2 init_sets(<decode set>, <encode_set>)
+=head2 _init_sets(<decode set>, <encode_set>)
 
-  Initialise recoding sets. We can't do this on loading the module as we don't have the config
-  information to do this yet
+Initialise recoding sets. 
+This is a private method, and its direct usage should not be needed 
+in normal circunstances.
 
 =cut
 
-sub init_sets {    ### FIXME: get rid of this.
-    shift;         # class method
+sub _init_sets { 
     ( $set_d, $set_e ) = @_;
     no autovivification;
 
