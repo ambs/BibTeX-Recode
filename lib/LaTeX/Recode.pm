@@ -393,3 +393,26 @@ sub _init_sets {
 }
 
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+biber
+
+=head1 AUTHOR
+
+François Charette, Philip Kime and Alberto Simões C<< ambs@cpan.org >>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016, François Charette, Philip Kime and Alberto Simões, all rights reserved.
+
+This code is free software.  You can redistribute it and/or
+modify it under the terms of the Artistic License 2.0.
+
+This program is distributed in the hope that it will be useful,
+but without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
