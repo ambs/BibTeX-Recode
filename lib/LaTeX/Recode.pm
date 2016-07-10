@@ -197,13 +197,8 @@ sub latex_decode {
     $text =~ s/}(\pM+\pL){(?!\pL+\\)/$1/g;
     $text = reverse $text;
 
-    if ($norm) {
-      print STDERR "\n HERE \n";
-        return Unicode::Normalize::normalize( $norm_form, $text );
-    }
-    else {
-        return $text;
-    }
+    return $norm ? Unicode::Normalize::normalize( $norm_form, $text ) : $text;
+    
 }
 
 =head2 latex_encode($text, @options)
@@ -378,7 +373,7 @@ sub _init_sets {
         $remap_d->{$type}{re} = join( '|',
             map { /[\.\^\|\+\-\)\(]/ ? '\\' . $_ : $_ }
                 sort { length($b) <=> length($a) }
-                keys $remap_d->{$type}{map}->%* );
+                keys %{$remap_d->{$type}{map}} );
         $remap_d->{$type}{re} = qr|$remap_d->{$type}{re}|;
     }
 

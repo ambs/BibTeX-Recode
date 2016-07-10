@@ -1,11 +1,18 @@
-
-use Test::More tests => 1;
-use LaTeX::Recode encode_set => 'full', decode_set => 'full';
 use utf8;
+use Test::More;
+use LaTeX::Recode
+	encode_set => 'full',
+	decode_set => 'full';
 
 
-my $string       = 'Muḥammad ibn Mūsā al-Khwārizmī';
-my $latex_string = latex_encode($string);
+my @tests = do "t/tests.pl";
 
-is $latex_string => 'Mu\d{h}ammad ibn M\={u}s\={a} al-Khw\={a}rizm\={\i}', 'test 1';
+plan tests => scalar(@tests);
+
+my $i = 0;
+for my $t (@tests) {	
+	++$i;
+	my $latex_string = latex_encode($t->[0]);
+	is $latex_string => $t->[1], "Test $i";
+}
 
