@@ -3,7 +3,7 @@ package LaTeX::Recode;
 use strict;
 use warnings;
 use parent qw(Exporter);
-
+use re 'eval';
 use Encode;
 use File::Slurp;
 use File::Spec;
@@ -20,8 +20,8 @@ sub import {
      my ($self, %opts) = @_;
      
      my $sets = qr/^(?:null|base|full)$/i;
-     my $encode_set = $opts{encode_set} =~ m!$sets! ? lc $opts{encode_set} : "base";
-     my $decode_set = $opts{decode_set} =~ m!$sets! ? lc $opts{decode_set} : "base";
+     my $encode_set = ($opts{encode_set}||"") =~ m!$sets! ? lc $opts{encode_set} : "base";
+     my $decode_set = ($opts{decode_set}||"") =~ m!$sets! ? lc $opts{decode_set} : "base";
      
      _init_sets($decode_set, $encode_set);
 
