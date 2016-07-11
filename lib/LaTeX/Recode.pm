@@ -8,7 +8,7 @@ use Encode;
 use File::Slurp;
 use File::Spec;
 use Unicode::Normalize;
-use List::AllUtils qw (first);
+use List::Util qw (first);
 use XML::LibXML::Simple;
 use utf8;
 
